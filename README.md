@@ -11,7 +11,7 @@ The study shows that prolonged wakefulness depletes presynaptic vesicles in the 
 
 This repository contains three components:
 
-| Folder | Content | Main figures |
+| Folder | Content | 
 |---|---|---|
 | [`01_EM_analysis/`](01_EM_analysis) | Deep-learning segmentation (Detectron2 Cascade Mask R-CNN) and morphometry of presynaptic terminals, active zones (AZs) and synaptic vesicles in transmission electron microscopy (TEM) images | 
 | [`02_Simulation/`](02_Simulation) | Mean-field model, leaky integrate-and-fire (LIF) networks with short-term synaptic depression (STD), AIS-augmented LIF network, and a Hodgkin–Huxley-based (SAN) network | 
@@ -86,7 +86,7 @@ Population activity is summarized with the coefficient of variation (CV) of the 
 
 R scripts that compute **NREM similarity**, an EEG-based metric of how closely the cortical activity of each wake epoch resembles NREM sleep, and reproduce the analyses in Fig. 5c–g.
 
-| Script | Dataset | Analyses | Figures |
+| Script | Dataset | Analyses |
 |---|---|---|---|
 | `EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` | WT and *Bmal1* KO mice, 6 days (LD 0–72 h, then DD 72–144 h) | Hourly NREM similarity versus wake-to-sleep (P<sub>WS</sub>) and sleep-to-wake (P<sub>SW</sub>) transition probabilities; individual-relative binning and Spearman's rank correlation |
 | `EEG_NREM similarity_without_Timeseries-KDE-Bar_K40E.R` | SNAP25-WT vs. SNAP25-K40E, 3-day baseline | Time course, distribution and light/dark comparison of NREM similarity | 
