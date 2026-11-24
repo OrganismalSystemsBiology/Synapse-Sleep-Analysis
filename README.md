@@ -13,9 +13,9 @@ This repository contains three components:
 
 | Folder | Content | Main figures |
 |---|---|---|
-| [`Simulation/`](Simulation) | Mean-field model, leaky integrate-and-fire (LIF) networks with short-term synaptic depression (STD), AIS-augmented LIF network, and a Hodgkin–Huxley-based (SAN) network | Fig. 4, Extended Data Figs. 5–10 |
-| [`EM_analysis/`](EM_analysis) | Deep-learning segmentation (Detectron2 Cascade Mask R-CNN) and morphometry of presynaptic terminals, active zones (AZs) and synaptic vesicles in transmission electron microscopy (TEM) images | Figs. 1g–j and 3f–h, Extended Data Fig. 1, Extended Data Tables 1–2, Supplementary Tables 1–2 |
-| [`EEG_analysis/`](EEG_analysis) | EEG/EMG spectral analysis, Process S fitting, NREM similarity and theta-dominated wakefulness | Figs. 2 and 5, Extended Data Figs. 2, 3 and 11–13 |
+| [`01_EM_analysis/`](01_EM_analysis) | Deep-learning segmentation (Detectron2 Cascade Mask R-CNN) and morphometry of presynaptic terminals, active zones (AZs) and synaptic vesicles in transmission electron microscopy (TEM) images | Figs. 1g–j and 3f–h, Extended Data Fig. 1, Extended Data Tables 1–2, Supplementary Tables 1–2 |
+| [`02_Simulation/`](02_Simulation) | Mean-field model, leaky integrate-and-fire (LIF) networks with short-term synaptic depression (STD), AIS-augmented LIF network, and a Hodgkin–Huxley-based (SAN) network | Fig. 4, Extended Data Figs. 5–10 |
+| [`03_EEG_analysis/`](03_EEG_analysis) | EEG/EMG spectral analysis, Process S fitting, NREM similarity and theta-dominated wakefulness | Figs. 2 and 5, Extended Data Figs. 2, 3 and 11–13 |
 
 
 
@@ -23,24 +23,6 @@ This repository contains three components:
 
 All code was developed with **Python 3.10**. Statistical tests reported in the paper were performed in **R 4.3.1**.
 
-
-
-
-## Simulation
-
-### Model overview
-
-All network models use Tsodyks–Markram-type short-term synaptic depression: each presynaptic spike releases a fraction **U** (release probability) of the available vesicle resource **r**, which recovers with time constant **τ<sub>rec</sub>**; the released amount is scaled by the postsynaptic weight **w**. 
-
-| Model | Description | Code |
-|---|---|---|
-| Mean-field | Three-variable (s, r, f) population model; static transfer function from the Siegert formula for a noisy LIF neuron; 4th-order Runge–Kutta, 15 s, dt = 1 ms | `mean-field.ipynb`|
-| LIF network (E only) | 80 excitatory conductance-based LIF neurons, Erdős–Rényi connectivity (p = 0.2), external Poisson input and Ornstein–Uhlenbeck background conductances; forward Euler, dt = 0.1 ms, 11.5 s (analysis window 1.5–11.5 s) | `random_search_sync_to_desync_Eonly.py` and the analysis scripts/notebooks below |
-| LIF network (E–I) | 64 excitatory + 16 inhibitory LIF neurons (p<sub>EE</sub> = 0.2, p<sub>EI</sub> = 0.4, p<sub>IE</sub> = 0.5, p<sub>II</sub> = 0.5), STD at both excitatory and inhibitory synapses | `random_search_sync_to_desync.py` |
-| AIS-augmented LIF | E-only LIF network with an exponential integrate-and-fire (EIF) term scaled by the AIS spike-initiation excitability α<sub>AIS</sub> | `random_search_AIS_EIF_STD_sync_to_desync.py`|
-| Hodgkin–Huxley-based network | 64 E + 16 I simplified averaged-neuron (SAN) model neurons (leak, delayed-rectifier K⁺, Ca²⁺, Ca²⁺-dependent K⁺, persistent Na⁺) with AMPAR/GABAR synapses, vesicle-resource STD and OU noise | `anmodel/`, `an_sws_san_net_analysis.ipynb` |
-
-Population activity is summarized with the coefficient of variation (CV) of the population spike count in 50-ms windows (compared with the Poisson expectation CV<sub>0</sub>), the mean zero-lag pairwise Pearson correlation of 5-ms binned spike trains, population-burst statistics and the maximum firing rate in 100-ms sliding windows.
 
 
 
@@ -90,6 +72,23 @@ For each curated image:
 Per-synapse and per-vesicle values are exported as CSV/JSON (`SD-vs-nonSD/`, `WT-vs-K40E/`, and per-animal folders). The number of vesicles within 130 nm of the AZ is derived from the vesicle-to-AZ distances. Group comparisons were made at the synapse level (Mann–Whitney U test).
 
 ---
+
+## Simulation
+
+### Model overview
+
+All network models use Tsodyks–Markram-type short-term synaptic depression: each presynaptic spike releases a fraction **U** (release probability) of the available vesicle resource **r**, which recovers with time constant **τ<sub>rec</sub>**; the released amount is scaled by the postsynaptic weight **w**. 
+
+| Model | Description | Code |
+|---|---|---|
+| Mean-field | Three-variable (s, r, f) population model; static transfer function from the Siegert formula for a noisy LIF neuron; 4th-order Runge–Kutta, 15 s, dt = 1 ms | `mean-field.ipynb`|
+| LIF network (E only) | 80 excitatory conductance-based LIF neurons, Erdős–Rényi connectivity (p = 0.2), external Poisson input and Ornstein–Uhlenbeck background conductances; forward Euler, dt = 0.1 ms, 11.5 s (analysis window 1.5–11.5 s) | `random_search_sync_to_desync_Eonly.py` and the analysis scripts/notebooks below |
+| LIF network (E–I) | 64 excitatory + 16 inhibitory LIF neurons (p<sub>EE</sub> = 0.2, p<sub>EI</sub> = 0.4, p<sub>IE</sub> = 0.5, p<sub>II</sub> = 0.5), STD at both excitatory and inhibitory synapses | `random_search_sync_to_desync.py` |
+| AIS-augmented LIF | E-only LIF network with an exponential integrate-and-fire (EIF) term scaled by the AIS spike-initiation excitability α<sub>AIS</sub> | `random_search_AIS_EIF_STD_sync_to_desync.py`|
+| Hodgkin–Huxley-based network | 64 E + 16 I simplified averaged-neuron (SAN) model neurons (leak, delayed-rectifier K⁺, Ca²⁺, Ca²⁺-dependent K⁺, persistent Na⁺) with AMPAR/GABAR synapses, vesicle-resource STD and OU noise | `anmodel/`, `an_sws_san_net_analysis.ipynb` |
+
+Population activity is summarized with the coefficient of variation (CV) of the population spike count in 50-ms windows (compared with the Poisson expectation CV<sub>0</sub>), the mean zero-lag pairwise Pearson correlation of 5-ms binned spike trains, population-burst statistics and the maximum firing rate in 100-ms sliding windows.
+
 
 ## EEG_analysis
 
