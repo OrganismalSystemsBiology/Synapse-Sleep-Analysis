@@ -13,9 +13,9 @@ This repository contains three components:
 
 | Folder | Content | Main figures |
 |---|---|---|
-| [`01_EM_analysis/`](01_EM_analysis) | Deep-learning segmentation (Detectron2 Cascade Mask R-CNN) and morphometry of presynaptic terminals, active zones (AZs) and synaptic vesicles in transmission electron microscopy (TEM) images | Figs. 1g–j and 3f–h, Extended Data Fig. 1, Extended Data Tables 1–2, Supplementary Tables 1–2 |
-| [`02_Simulation/`](02_Simulation) | Mean-field model, leaky integrate-and-fire (LIF) networks with short-term synaptic depression (STD), AIS-augmented LIF network, and a Hodgkin–Huxley-based (SAN) network | Fig. 4, Extended Data Figs. 5–10 |
-| [`03_NREM_similarity/`](03_NREM_similarity) | NREM similarity: cosine similarity between wake EEG spectra and a reference NREM spectral vector, its relation to wake-to-sleep transition probability, and comparisons between WT and SNARE-mutant mice | Fig. 5c–g |
+| [`01_EM_analysis/`](01_EM_analysis) | Deep-learning segmentation (Detectron2 Cascade Mask R-CNN) and morphometry of presynaptic terminals, active zones (AZs) and synaptic vesicles in transmission electron microscopy (TEM) images | 
+| [`02_Simulation/`](02_Simulation) | Mean-field model, leaky integrate-and-fire (LIF) networks with short-term synaptic depression (STD), AIS-augmented LIF network, and a Hodgkin–Huxley-based (SAN) network | 
+| [`03_NREM_similarity/`](03_NREM_similarity) | NREM similarity: cosine similarity between wake EEG spectra and a reference NREM spectral vector, its relation to wake-to-sleep transition probability, and comparisons between WT and SNARE-mutant mice |
 
 
 
@@ -30,8 +30,8 @@ The EM_analysis and Simulation code was developed with **Python 3.10**. The NREM
 
 Excitatory synapses in TEM images of the prelimbic cortex were analyzed in three steps: annotation, instance segmentation, and morphometry. Two Detectron2 models were trained: a two-class model for presynaptic terminals (class 0) and AZs (class 1), and a single-class model for synaptic vesicles.
 
-### 1. Image and annotation preparation — `EM_image_prep_SD.ipynb`, `EM_image_prep_snap25.ipynb`
-
+### 1. Image and annotation preparation — 
+-`EM_image_prep_SD.ipynb`, `EM_image_prep_snap25.ipynb`
 - Crops the information band at the bottom of the raw TEM TIFF images and generates empty [Labelme](https://github.com/wkentaro/labelme) JSON files for annotation.
 - Cleans Labelme annotations (removes polygons with fewer than three vertices, unifies label names, fixes `imagePath`).
 - Splits and merges annotation sets by label: `synapse` (presynaptic terminal) and `az` for the terminal/AZ model, `vesicle` for the vesicle model.
@@ -39,28 +39,20 @@ Excitatory synapses in TEM images of the prelimbic cortex were analyzed in three
 
 The two notebooks contain the same procedures for the sleep-deprivation (SD vs. control) and SNAP25 (WT vs. K40E) datasets. Annotations are used in COCO format (a `JPEGImages/` folder plus `annotations.json` per dataset).
 
-### 2. Segmentation models — `detectron2_model_synapse.ipynb`, `detectron2_model_vesicle.ipynb`
-
+### 2. Segmentation models — 
+-`detectron2_model_synapse.ipynb`, `detectron2_model_vesicle.ipynb`
 - **Pre-processing:** images and COCO annotations are down-scaled by 0.5 (to 2000 × 1313 px); each image is normalized by its median and median absolute deviation (MAD) and saved as an 8-bit image.
 - **Model:** Cascade Mask R-CNN with a ResNeXt-152 (32×8d) FPN backbone and deformable convolutions, ImageNet-5k pre-trained (`Misc/cascade_mask_rcnn_X_152_32x8d_FPN_IN5k_gn_dconv`), trained with Detectron2's `DefaultTrainer`, one image per batch, frozen BN in the backbone/FPN, GN in the ROI heads and a warm-up cosine learning-rate schedule.
 - **Hyperparameter search:** grid search over base learning rate and maximum iterations, then over RPN NMS, ROI-head NMS and score thresholds, using the pixel-wise F1 score (Dice) on the 16 test images as the selection criterion.
 - **Evaluation:** pixel-wise F1, sensitivity and specificity, and COCO AP (`COCOEvaluator`, bbox and segm) after a custom mask-level NMS (`MaskNMSModelWrapper`).
 - **Inference and curation:** the best model is applied to the unannotated images; predicted masks are converted to Labelme polygons for manual curation.
 
-Selected hyperparameters (Extended Data Table 1):
-
-| Parameter | Presynaptic terminal + AZ | Vesicle |
-|---|---|---|
-| `SOLVER.BASE_LR` | 0.0024 | 0.007 |
-| `SOLVER.MAX_ITER` | 70000 | 50000 |
-| `MODEL.ROI_HEADS.SCORE_THRESH_TEST` | 0.1 | 0.1 |
-| `MODEL.RPN.NMS_THRESH` | 0.5 | 0.9 |
-| `MODEL.ROI_HEADS.NMS_THRESH_TEST` | 0.3 | 0.5 |
-| Mask-level NMS threshold (`mask_th`) | 0.01 | 80 % |
 
 Training requires a CUDA-capable GPU. Trained weights (`model_final.pth`) are written to the Detectron2 output directory set in the notebook.
 
-### 3. Morphometry — `detectron2_analysis_SD.ipynb`, `detectron2_analysis_snap25.ipynb`
+
+### 3. Morphometry — 
+-`detectron2_analysis_SD.ipynb`, `detectron2_analysis_snap25.ipynb`
 
 For each curated image:
 
@@ -82,7 +74,7 @@ All network models use Tsodyks–Markram-type short-term synaptic depression: ea
 | Model | Description | Code |
 |---|---|---|
 | Mean-field | Three-variable (s, r, f) population model; static transfer function from the Siegert formula for a noisy LIF neuron; 4th-order Runge–Kutta, 15 s, dt = 1 ms | `mean-field.ipynb`|
-| LIF network (E only) | 80 excitatory conductance-based LIF neurons, Erdős–Rényi connectivity (p = 0.2), external Poisson input and Ornstein–Uhlenbeck background conductances; forward Euler, dt = 0.1 ms, 11.5 s (analysis window 1.5–11.5 s) | `random_search_sync_to_desync_Eonly.py` and the analysis scripts/notebooks below |
+| LIF network (E only) | 80 excitatory conductance-based LIF neurons, Erdős–Rényi connectivity (p = 0.2), external Poisson input and Ornstein–Uhlenbeck background conductances; forward Euler, dt = 0.1 ms, 11.5 s (analysis window 1.5–11.5 s) | `random_search_sync_to_desync_Eonly.py`|
 | LIF network (E–I) | 64 excitatory + 16 inhibitory LIF neurons (p<sub>EE</sub> = 0.2, p<sub>EI</sub> = 0.4, p<sub>IE</sub> = 0.5, p<sub>II</sub> = 0.5), STD at both excitatory and inhibitory synapses | `random_search_sync_to_desync.py` |
 | AIS-augmented LIF | E-only LIF network with an exponential integrate-and-fire (EIF) term scaled by the AIS spike-initiation excitability α<sub>AIS</sub> | `random_search_AIS_EIF_STD_sync_to_desync.py`|
 | Hodgkin–Huxley-based network | 64 E + 16 I simplified averaged-neuron (SAN) model neurons (leak, delayed-rectifier K⁺, Ca²⁺, Ca²⁺-dependent K⁺, persistent Na⁺) with AMPAR/GABAR synapses, vesicle-resource STD and OU noise | `anmodel/`, `an_sws_san_net_analysis.ipynb` |
@@ -96,10 +88,10 @@ R scripts that compute **NREM similarity**, an EEG-based metric of how closely t
 
 | Script | Dataset | Analyses | Figures |
 |---|---|---|---|
-| `EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` | WT and *Bmal1* KO mice, 6 days (LD 0–72 h, then DD 72–144 h) | Hourly NREM similarity versus wake-to-sleep (P<sub>WS</sub>) and sleep-to-wake (P<sub>SW</sub>) transition probabilities; individual-relative binning and Spearman's rank correlation | Fig. 5c,d |
-| `EEG_NREM similarity_without_Timeseries-KDE-Bar_K40E.R` | SNAP25-WT vs. SNAP25-K40E, 3-day baseline | Time course, distribution and light/dark comparison of NREM similarity | Fig. 5e |
-| `EEG_NREM similarity_without_Timeseries-KDE-Bar_4K.R` | SNAP25-WT vs. SNAP25-4K, 3-day baseline | Same as above | Fig. 5f |
-| `EEG_NREM similarity_without_Timeseries-KDE-Bar_AVVA.R` | STX1A-WT vs. STX1A-AVVA, 3-day baseline | Same as above | Fig. 5g |
+| `EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` | WT and *Bmal1* KO mice, 6 days (LD 0–72 h, then DD 72–144 h) | Hourly NREM similarity versus wake-to-sleep (P<sub>WS</sub>) and sleep-to-wake (P<sub>SW</sub>) transition probabilities; individual-relative binning and Spearman's rank correlation |
+| `EEG_NREM similarity_without_Timeseries-KDE-Bar_K40E.R` | SNAP25-WT vs. SNAP25-K40E, 3-day baseline | Time course, distribution and light/dark comparison of NREM similarity | 
+| `EEG_NREM similarity_without_Timeseries-KDE-Bar_4K.R` | SNAP25-WT vs. SNAP25-4K, 3-day baseline | Same as above | 
+| `EEG_NREM similarity_without_Timeseries-KDE-Bar_AVVA.R` | STX1A-WT vs. STX1A-AVVA, 3-day baseline | Same as above | 
 
 The three mutant-cohort scripts are identical except for the input file, group names and colors.
 
@@ -122,14 +114,15 @@ Recordings are assumed to start at ZT0: hours are counted from the first epoch, 
 4. **NREM similarity** of each epoch is the cosine similarity between its Z-scored spectrum and V<sub>NREM_feat.</sub>.
 5. **Strict wake filter:** only wake epochs whose preceding and following epochs are also wake are used.
 
-### Circadian analysis — `EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` (Fig. 5c,d)
-
+### Circadian analysis — 
+-`EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` 
 - **Hourly values:** mean NREM similarity of strict-wake epochs (hours with > 30 strict-wake epochs); P<sub>WS</sub> = (wake→sleep transitions / wake epochs) × 100 and P<sub>SW</sub> = (sleep→wake transitions / sleep epochs) × 100, with NREM and REM pooled as sleep (hours with > 30 wake or sleep epochs). The merged hourly table is cached as `01_Merged_Hourly_Data.csv`; delete it to recompute from the pickle.
 - **Overlays:** group-mean and individual time courses of NREM similarity together with P<sub>WS</sub>, −P<sub>SW</sub> and P<sub>WS</sub> − P<sub>SW</sub>, separately for LD (0–72 h) and DD (72–144 h).
 - **Individual-relative binning:** for each mouse and period, the hourly NREM-similarity values are divided into equal-width rank bins (6 bins in the paper; the script also outputs 7 and 8 bins), and the mean transition probability is computed per bin. Group means are weighted by the number of hours per bin, and the association between rank and group-mean P<sub>WS</sub> is tested with Spearman's rank correlation (the maximal information coefficient, MIC, is also reported).
 - **Outputs** (in `EEG_NREM-similarity_Pws_Psw_without/`): PDF figures, plot-data CSVs, binned data per mouse (`Individual_Binned_Data/`), correlation statistics (`15_Relative_Binned_Detailed_Stats_LD_DD.csv`) and a PowerPoint summary.
 
-### Mutant cohorts — `EEG_NREM similarity_without_Timeseries-KDE-Bar_<K40E|4K|AVVA>.R` (Fig. 5e–g)
+### Mutant cohorts — 
+-`EEG_NREM similarity_without_Timeseries-KDE-Bar_<K40E|4K|AVVA>.R` 
 
 Using the first 3 days of baseline recording:
 
