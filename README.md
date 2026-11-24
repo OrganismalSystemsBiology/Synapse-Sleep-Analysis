@@ -15,13 +15,13 @@ This repository contains three components:
 |---|---|---|
 | [`01_EM_analysis/`](01_EM_analysis) | Deep-learning segmentation (Detectron2 Cascade Mask R-CNN) and morphometry of presynaptic terminals, active zones (AZs) and synaptic vesicles in transmission electron microscopy (TEM) images | Figs. 1g–j and 3f–h, Extended Data Fig. 1, Extended Data Tables 1–2, Supplementary Tables 1–2 |
 | [`02_Simulation/`](02_Simulation) | Mean-field model, leaky integrate-and-fire (LIF) networks with short-term synaptic depression (STD), AIS-augmented LIF network, and a Hodgkin–Huxley-based (SAN) network | Fig. 4, Extended Data Figs. 5–10 |
-| [`03_EEG_analysis/`](03_EEG_analysis) | EEG/EMG spectral analysis, Process S fitting, NREM similarity and theta-dominated wakefulness | Figs. 2 and 5, Extended Data Figs. 2, 3 and 11–13 |
+| [`03_NREM_similarity/`](03_NREM_similarity) | NREM similarity: cosine similarity between wake EEG spectra and a reference NREM spectral vector, its relation to wake-to-sleep transition probability, and comparisons between WT and SNARE-mutant mice | Fig. 5c–g |
 
 
 
 ## Requirements
 
-All code was developed with **Python 3.10**. Statistical tests reported in the paper were performed in **R 4.3.1**.
+The EM_analysis and Simulation code was developed with **Python 3.10**. The NREM_similarity scripts and the statistical tests reported in the paper use **R 4.3.1**.
 
 
 
@@ -90,15 +90,64 @@ All network models use Tsodyks–Markram-type short-term synaptic depression: ea
 Population activity is summarized with the coefficient of variation (CV) of the population spike count in 50-ms windows (compared with the Poisson expectation CV<sub>0</sub>), the mean zero-lag pairwise Pearson correlation of 5-ms binned spike trains, population-burst statistics and the maximum firing rate in 100-ms sliding windows.
 
 
-## EEG_analysis
+## NREM_similarity
 
-*Code will be added.* This folder will contain the EEG/EMG analyses described in the Methods:
+R scripts that compute **NREM similarity**, an EEG-based metric of how closely the cortical activity of each wake epoch resembles NREM sleep, and reproduce the analyses in Fig. 5c–g.
 
-- vigilance-state scoring in 8-s epochs with [FASTER2](https://doi.org/10.1111/ejn.16465) (Yamada et al., 2024);
-- power spectral density estimation (Welch's method; eight 50 %-overlapping Hamming-windowed sub-windows per epoch), relative NREM delta power (SWA, 0.5–4.0 Hz) and wake-to-sleep transition probability (P<sub>WS</sub>);
-- fitting of the Process S model to NREM SWA dynamics (accumulation and dissipation time constants τ<sub>i</sub> and τ<sub>d</sub>);
-- **NREM similarity**: cosine similarity between the normalized, log-transformed and Z-scored spectrum of each wake epoch and a reference NREM feature vector built from WT baseline recordings;
-- theta-dominated wakefulness (TDW) classification.
+| Script | Dataset | Analyses | Figures |
+|---|---|---|---|
+| `EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` | WT and *Bmal1* KO mice, 6 days (LD 0–72 h, then DD 72–144 h) | Hourly NREM similarity versus wake-to-sleep (P<sub>WS</sub>) and sleep-to-wake (P<sub>SW</sub>) transition probabilities; individual-relative binning and Spearman's rank correlation | Fig. 5c,d |
+| `EEG_NREM similarity_without_Timeseries-KDE-Bar_K40E.R` | SNAP25-WT vs. SNAP25-K40E, 3-day baseline | Time course, distribution and light/dark comparison of NREM similarity | Fig. 5e |
+| `EEG_NREM similarity_without_Timeseries-KDE-Bar_4K.R` | SNAP25-WT vs. SNAP25-4K, 3-day baseline | Same as above | Fig. 5f |
+| `EEG_NREM similarity_without_Timeseries-KDE-Bar_AVVA.R` | STX1A-WT vs. STX1A-AVVA, 3-day baseline | Same as above | Fig. 5g |
+
+The three mutant-cohort scripts are identical except for the input file, group names and colors.
+
+### Input data
+
+Each script loads a Python pickle (`psd_info_list_<cohort>.pkl`) through `reticulate`. The pickle is a list with one entry per mouse containing:
+
+- `mouse_id`, `mouse_group` – animal ID and genotype label (labels such as `SNAP25_WT`/`SNAP25_K40E` are renamed to `WT`/`K40E` in the script);
+- `raw` – epoch × frequency matrix of EEG power spectral densities for consecutive 8-s epochs;
+- `stage_call` – vigilance state of each epoch (`WAKE`, `NREM`, `REM`; scored with [FASTER2](https://doi.org/10.1111/ejn.16465));
+- `freq_bins` – frequencies (Hz) of the columns of `raw`.
+
+Recordings are assumed to start at ZT0: hours are counted from the first epoch, and hours 0–11 of each day are treated as the light phase. Before running, set `local_filepath` (path to the pickle) and `RETICULATE_PYTHON` (a Python installation with `numpy`/`pandas`) at the top of each script.
+
+### NREM similarity (common to all scripts)
+
+1. Each epoch's spectrum is normalized to its total power (%) and log10-transformed.
+2. **Reference spectra:** all epochs from the WT mice of the same cohort during the first 3 days (LD baseline) are used to compute the per-frequency mean (μ<sub>wt</sub>) and standard deviation (σ<sub>wt</sub>); every epoch of every mouse is Z-scored with μ<sub>wt</sub> and σ<sub>wt</sub>.
+3. **NREM feature vector:** V<sub>NREM_feat.</sub> is the mean Z-scored spectrum across all WT NREM epochs.
+4. **NREM similarity** of each epoch is the cosine similarity between its Z-scored spectrum and V<sub>NREM_feat.</sub>.
+5. **Strict wake filter:** only wake epochs whose preceding and following epochs are also wake are used.
+
+### Circadian analysis — `EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R` (Fig. 5c,d)
+
+- **Hourly values:** mean NREM similarity of strict-wake epochs (hours with > 30 strict-wake epochs); P<sub>WS</sub> = (wake→sleep transitions / wake epochs) × 100 and P<sub>SW</sub> = (sleep→wake transitions / sleep epochs) × 100, with NREM and REM pooled as sleep (hours with > 30 wake or sleep epochs). The merged hourly table is cached as `01_Merged_Hourly_Data.csv`; delete it to recompute from the pickle.
+- **Overlays:** group-mean and individual time courses of NREM similarity together with P<sub>WS</sub>, −P<sub>SW</sub> and P<sub>WS</sub> − P<sub>SW</sub>, separately for LD (0–72 h) and DD (72–144 h).
+- **Individual-relative binning:** for each mouse and period, the hourly NREM-similarity values are divided into equal-width rank bins (6 bins in the paper; the script also outputs 7 and 8 bins), and the mean transition probability is computed per bin. Group means are weighted by the number of hours per bin, and the association between rank and group-mean P<sub>WS</sub> is tested with Spearman's rank correlation (the maximal information coefficient, MIC, is also reported).
+- **Outputs** (in `EEG_NREM-similarity_Pws_Psw_without/`): PDF figures, plot-data CSVs, binned data per mouse (`Individual_Binned_Data/`), correlation statistics (`15_Relative_Binned_Detailed_Stats_LD_DD.csv`) and a PowerPoint summary.
+
+### Mutant cohorts — `EEG_NREM similarity_without_Timeseries-KDE-Bar_<K40E|4K|AVVA>.R` (Fig. 5e–g)
+
+Using the first 3 days of baseline recording:
+
+- **Stage-wise spectra:** mean Z-scored spectra (0–30 Hz) of wake, NREM and REM epochs for each genotype, Z-scored both per animal and against the WT reference.
+- **Distribution:** kernel density estimates of NREM similarity across all strict-wake epochs for each genotype.
+- **Time course:** hourly mean NREM similarity (mean ± SEM across mice) over 72 h; the dotted line marks the mean NREM similarity of WT reference wake epochs.
+- **Light/dark comparison:** per-mouse mean NREM similarity over 24 h, the light phase (ZT0–12) and the dark phase (ZT12–24), shown as box plots. WT and mutant groups are compared with Student's t-test, Welch's t-test or the Mann–Whitney U test depending on normality and equality of variances; the results of all candidate tests (Shapiro–Wilk, F-test, Wilcoxon, Welch, Student) are written to `Stats_Results_Detailed_Summary_Boxplots.csv`.
+- **Outputs** (in `outputs/`): PDF figures, plot-data CSVs and per-mouse summaries (`Projection_Phase_Summary.csv`, `Projection_Timecourse_Summary.csv`, `Projection_AllScores_Raw.csv`).
+
+### Requirements and usage
+
+R 4.3.1 with `tidyverse`, `reticulate`, `car` and `ggh4x`; the *Bmal1* script additionally uses `minerva` and `officer`. Outputs are written relative to the working directory:
+
+```bash
+cd 03_NREM_similarity
+Rscript "EEG_NREM similarity_without_Timeseries-KDE-Bar_K40E.R"
+Rscript EEG_NREM-similarity_Pws_Psw_Bmal1_without_Spearman.R
+```
 
 ---
 
